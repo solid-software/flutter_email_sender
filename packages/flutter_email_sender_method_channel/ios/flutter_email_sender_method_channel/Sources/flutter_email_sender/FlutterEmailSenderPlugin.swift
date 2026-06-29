@@ -34,6 +34,10 @@ public class FlutterEmailSenderPlugin: NSObject, FlutterPlugin {
             let mailComposerVC = MFMailComposeViewController()
             mailComposerVC.mailComposeDelegate = self
 
+            if #available(iOS 26.4, *), UIDevice.current.userInterfaceIdiom == .pad {
+                mailComposerVC.modalPresentationStyle = .formSheet
+            }
+
             mailComposerVC.setToRecipients(email.recipients)
             if let subject = email.subject {
                 mailComposerVC.setSubject(subject)
