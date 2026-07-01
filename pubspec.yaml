@@ -2,8 +2,11 @@ name: _
 publish_to: none
 
 environment:
-  sdk: ^3.12.0
-  flutter: ">=3.44.0"
+  sdk: ">=3.10.0 <4.0.0"
+  flutter: ">=3.38.8"
 
 workspace:
-  - packages/*
+  - packages/flutter_email_sender
+  - packages/flutter_email_sender_method_channel
+  - packages/flutter_email_sender_platform_interface
+  - packages/flutter_email_sender_web
