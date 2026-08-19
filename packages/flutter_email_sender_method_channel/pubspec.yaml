@@ -39,6 +39,10 @@ flutter:
         pluginClass: FlutterEmailSenderPlugin
         dartPluginClass: MethodChannelFlutterEmailSender
         dartFileName: src/method_channel_flutter_email_sender.dart
+      windows:
+        pluginClass: FlutterEmailSenderMethodChannelPluginCApi
+        dartPluginClass: MethodChannelFlutterEmailSender
+        dartFileName: src/method_channel_flutter_email_sender.dart
 
 topics:
   - email

@@ -1,0 +1,31 @@
+#ifndef FLUTTER_PLUGIN_FLUTTER_EMAIL_SENDER_METHOD_CHANNEL_PLUGIN_H_
+#define FLUTTER_PLUGIN_FLUTTER_EMAIL_SENDER_METHOD_CHANNEL_PLUGIN_H_
+
+#include <flutter/method_channel.h>
+#include <flutter/plugin_registrar_windows.h>
+
+#include <future>
+#include <memory>
+#include <vector>
+
+class FlutterEmailSenderMethodChannelPlugin : public flutter::Plugin {
+ public:
+  static void RegisterWithRegistrar(flutter::PluginRegistrarWindows* registrar);
+
+  FlutterEmailSenderMethodChannelPlugin();
+  ~FlutterEmailSenderMethodChannelPlugin() override;
+
+  FlutterEmailSenderMethodChannelPlugin(
+      const FlutterEmailSenderMethodChannelPlugin&) = delete;
+  FlutterEmailSenderMethodChannelPlugin& operator=(
+      const FlutterEmailSenderMethodChannelPlugin&) = delete;
+
+ private:
+  void HandleMethodCall(
+      const flutter::MethodCall<flutter::EncodableValue>& method_call,
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+
+  std::vector<std::future<void>> workers_;
+};
+
+#endif

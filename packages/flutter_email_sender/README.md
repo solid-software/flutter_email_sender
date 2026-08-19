@@ -7,6 +7,7 @@ In android it opens default mail app via intent.
 In iOS `MFMailComposeViewController` is used to compose an email.
 
 In macOS `NSSharingService` with `.composeEmail` is used to compose an email.
+In Windows an editable MIME `.eml` draft is opened in the default email client.
 The plugin exposes platform capabilities so apps can adapt their UI before sending.
 
 The public API throws typed Dart exceptions rather than exposing raw `PlatformException`s for expected failures.
@@ -18,6 +19,7 @@ The public API throws typed Dart exceptions rather than exposing raw `PlatformEx
 | Android | Yes | Yes | Yes | Yes |
 | iOS | Yes | Yes | Yes | Yes |
 | macOS | No | No | No | Yes |
+| Windows | Yes | Yes | Yes | Yes |
 | Web | Yes | Yes | No | No |
 
 Web support uses `mailto:` and depends on browser and configured mail client behavior.
@@ -51,6 +53,10 @@ try {
   await FlutterEmailSender.send(email);
 } on FlutterEmailSenderNotAvailableException {
   // Email composer is unavailable on this device right now.
+} on FlutterEmailSenderStorageFullException {
+  // There is not enough storage to prepare the email draft.
+} on FlutterEmailSenderAttachmentException {
+  // An attachment could not be read.
 } on FlutterEmailSenderUnsupportedFeatureException catch (error) {
   // Requested features are unsupported on the current platform.
   debugPrint('Unsupported: ${error.unsupportedFeatures}');
@@ -60,6 +66,8 @@ try {
 ## Errors
 
 - `FlutterEmailSenderNotAvailableException`: no email composer is currently available.
+- `FlutterEmailSenderStorageFullException`: there is not enough storage to prepare the email draft.
+- `FlutterEmailSenderAttachmentException`: an attachment cannot be read.
 - `FlutterEmailSenderUnsupportedFeatureException`: requested fields are unsupported on the current platform.
 - `FlutterEmailSenderPlatformException`: unexpected platform/plugin error.
 

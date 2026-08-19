@@ -1,6 +1,6 @@
 # flutter_email_sender_method_channel
 
-Method-channel implementation of `flutter_email_sender` for Android, iOS, and macOS.
+Method-channel implementation of `flutter_email_sender` for Android, iOS, macOS, and Windows.
 
 This package is an endorsed federated implementation and is usually consumed through `package:flutter_email_sender/flutter_email_sender.dart`.
 
@@ -9,6 +9,7 @@ This package is an endorsed federated implementation and is usually consumed thr
 - Android
 - iOS
 - macOS
+- Windows
 
 ## Endorsement
 
@@ -19,3 +20,4 @@ This package is an endorsed federated implementation and is usually consumed thr
 - Android uses intents to open an email app.
 - iOS uses `MFMailComposeViewController`.
 - macOS uses `NSSharingService` with `.composeEmail`.
+- Windows opens an editable MIME `.eml` draft in the default email client.
