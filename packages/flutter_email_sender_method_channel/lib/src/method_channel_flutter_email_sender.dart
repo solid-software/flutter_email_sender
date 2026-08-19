@@ -32,6 +32,16 @@ class MethodChannelFlutterEmailSender extends FlutterEmailSenderPlatform {
     supportsAttachments: true,
   );
 
+  static const EmailCapabilities _windowsCapabilities = EmailCapabilities(
+    canSend: true,
+    supportsCc: true,
+    supportsBcc: true,
+    supportsSubject: true,
+    supportsPlainTextBody: true,
+    supportsHtmlBody: true,
+    supportsAttachments: true,
+  );
+
   @override
   Future<void> send(Email email) async {
     final capabilities = await getCapabilities();
@@ -42,8 +52,10 @@ class MethodChannelFlutterEmailSender extends FlutterEmailSenderPlatform {
   @override
   Future<EmailCapabilities> getCapabilities() async {
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.macOS =>
-        _nativeCapabilities(),
+      TargetPlatform.android ||
+      TargetPlatform.iOS ||
+      TargetPlatform.macOS ||
+      TargetPlatform.windows => _nativeCapabilities(),
       _ => const EmailCapabilities.none(),
     };
   }
@@ -56,6 +68,7 @@ class MethodChannelFlutterEmailSender extends FlutterEmailSenderPlatform {
     final defaults = switch (defaultTargetPlatform) {
       TargetPlatform.android || TargetPlatform.iOS => _mobileCapabilities,
       TargetPlatform.macOS => _macosCapabilities,
+      TargetPlatform.windows => _windowsCapabilities,
       _ => const EmailCapabilities.none(),
     };
 

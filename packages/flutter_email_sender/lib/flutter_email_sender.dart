@@ -49,6 +49,14 @@ class FlutterEmailSender {
         return FlutterEmailSenderNotAvailableException(
           error.message ?? 'Email composer is unavailable.',
         );
+      case 'attachment_error':
+        return FlutterEmailSenderAttachmentException(
+          error.message ?? 'An email attachment is unavailable.',
+        );
+      case 'storage_full':
+        return FlutterEmailSenderStorageFullException(
+          error.message ?? 'There is not enough storage to prepare the email.',
+        );
       case 'unsupported':
         return FlutterEmailSenderUnsupportedFeatureException(
           unsupportedFeatures: _extractUnsupportedFeatures(error.message),

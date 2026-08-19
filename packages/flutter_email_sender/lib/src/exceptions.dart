@@ -21,6 +21,22 @@ final class FlutterEmailSenderNotAvailableException
   ]);
 }
 
+/// Thrown when an attachment cannot be read.
+final class FlutterEmailSenderAttachmentException
+    extends FlutterEmailSenderException {
+  const FlutterEmailSenderAttachmentException([
+    super.message = 'An email attachment is unavailable.',
+  ]);
+}
+
+/// Thrown when there is not enough storage to prepare the email draft.
+final class FlutterEmailSenderStorageFullException
+    extends FlutterEmailSenderException {
+  const FlutterEmailSenderStorageFullException([
+    super.message = 'There is not enough storage to prepare the email.',
+  ]);
+}
+
 /// Thrown when the current platform cannot support requested email features.
 final class FlutterEmailSenderUnsupportedFeatureException
     extends FlutterEmailSenderException {

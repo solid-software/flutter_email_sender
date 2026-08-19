@@ -39,6 +39,8 @@ flutter:
         default_package: flutter_email_sender_method_channel
       macos:
         default_package: flutter_email_sender_method_channel
+      windows:
+        default_package: flutter_email_sender_method_channel
       web:
         default_package: flutter_email_sender_web
 
