@@ -39,6 +39,16 @@ target_include_directories(${PLUGIN_NAME}
 )
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin ole32 shell32 shlwapi)
 
+if(BUILD_TESTING)
+  add_executable(eml_builder_test
+    "eml_builder.cpp"
+    "eml_builder_test.cpp"
+  )
+  apply_standard_settings(eml_builder_test)
+  target_link_libraries(eml_builder_test PRIVATE ole32)
+  add_test(NAME eml_builder_test COMMAND eml_builder_test)
+endif()
+
 set(flutter_email_sender_method_channel_bundled_libraries
   ""
   PARENT_SCOPE
