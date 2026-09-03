@@ -14,7 +14,6 @@ struct TemporaryEmlResult {
   int native_error = 0;
 };
 
-bool CanOpenEmlDraft();
 TemporaryEmlResult CreateTemporaryEmlPath();
 EmailLaunchResult OpenEmlDraft(const std::wstring& path);
 

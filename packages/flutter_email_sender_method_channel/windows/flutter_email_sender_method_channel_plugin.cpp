@@ -108,8 +108,11 @@ void FlutterEmailSenderMethodChannelPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue>& method_call,
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
   if (method_call.method_name() == "getCapabilities") {
+    // Packaged email clients may handle .eml through ShellExecuteW without
+    // exposing a classic executable association. Let send perform the actual
+    // launch and report association errors from ShellExecuteW.
     result->Success(flutter::EncodableMap{{flutter::EncodableValue("canSend"),
-                                          flutter::EncodableValue(CanOpenEmlDraft())}});
+                                          flutter::EncodableValue(true)}});
     return;
   }
   if (method_call.method_name() != "send") {

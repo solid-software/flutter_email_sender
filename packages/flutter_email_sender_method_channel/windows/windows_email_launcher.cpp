@@ -3,9 +3,6 @@
 #include <windows.h>
 #include <objbase.h>
 #include <shellapi.h>
-#include <shlwapi.h>
-
-#include <vector>
 
 namespace {
 
@@ -48,24 +45,6 @@ void CleanupStaleEmlDrafts(const std::wstring& directory) {
 }
 
 }  // namespace
-
-namespace {
-
-std::wstring AssociatedExecutable(ASSOCF flags, const wchar_t* association) {
-  std::vector<wchar_t> executable(32'768, L'\0');
-  DWORD length = static_cast<DWORD>(executable.size());
-  if (FAILED(AssocQueryStringW(flags, ASSOCSTR_EXECUTABLE, association, nullptr,
-                               executable.data(), &length)) ||
-      executable[0] == L'\0')
-    return {};
-  return executable.data();
-}
-
-}  // namespace
-
-bool CanOpenEmlDraft() {
-  return !AssociatedExecutable(ASSOCF_NONE, L".eml").empty();
-}
 
 TemporaryEmlResult CreateTemporaryEmlPath() {
   const std::wstring directory = TempDirectory();

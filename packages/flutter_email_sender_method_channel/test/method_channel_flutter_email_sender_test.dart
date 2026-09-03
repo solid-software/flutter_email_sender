@@ -38,12 +38,21 @@ void main() {
     expect((log.last.arguments as Map<Object?, Object?>)['subject'], 'Hi');
   });
 
-  test('getCapabilities reads runtime canSend from native code', () async {
-    final capabilities = await plugin.getCapabilities();
+  test(
+    'getCapabilities accepts optimistic native canSend capability',
+    () async {
+      final capabilities = await plugin.getCapabilities();
 
-    expect(log, hasLength(1));
-    expect(log.single.method, 'getCapabilities');
-    expect(capabilities.canSend, isTrue);
-    expect(capabilities.supportsAttachments, isTrue);
+      expect(log, hasLength(1));
+      expect(log.single.method, 'getCapabilities');
+      expect(capabilities.canSend, isTrue);
+      expect(capabilities.supportsAttachments, isTrue);
+    },
+  );
+
+  test('send proceeds when native capability is optimistic', () async {
+    await plugin.send(const Email(subject: 'Draft'));
+
+    expect(log.map((call) => call.method), <String>['getCapabilities', 'send']);
   });
 }

@@ -5,9 +5,44 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cwctype>
+#include <iomanip>
 #include <sstream>
 
 namespace {
+
+std::string CreateGuidText() {
+  GUID guid{};
+  if (FAILED(CoCreateGuid(&guid))) return {};
+
+  std::ostringstream value;
+  value << std::hex << std::setfill('0') << std::nouppercase << std::setw(8)
+        << guid.Data1 << '-' << std::setw(4) << guid.Data2 << '-'
+        << std::setw(4) << guid.Data3 << '-' << std::setw(2)
+        << static_cast<unsigned int>(guid.Data4[0]) << std::setw(2)
+        << static_cast<unsigned int>(guid.Data4[1]) << '-';
+  for (size_t index = 2; index < std::size(guid.Data4); ++index) {
+    value << std::setw(2) << static_cast<unsigned int>(guid.Data4[index]);
+  }
+  return value.str();
+}
+
+std::string Rfc5322Date() {
+  static constexpr const char* kWeekdays[] = {"Sun", "Mon", "Tue", "Wed",
+                                              "Thu", "Fri", "Sat"};
+  static constexpr const char* kMonths[] = {"Jan", "Feb", "Mar", "Apr",
+                                            "May", "Jun", "Jul", "Aug",
+                                            "Sep", "Oct", "Nov", "Dec"};
+  SYSTEMTIME now{};
+  GetSystemTime(&now);
+  std::ostringstream value;
+  value << kWeekdays[now.wDayOfWeek] << ", " << std::setfill('0')
+        << std::setw(2) << now.wDay << ' ' << kMonths[now.wMonth - 1] << ' '
+        << std::setw(4) << now.wYear << ' ' << std::setw(2) << now.wHour << ':'
+        << std::setw(2) << now.wMinute << ':' << std::setw(2) << now.wSecond
+        << " +0000";
+  return value.str();
+}
 
 std::string SanitizeHeader(std::string value) {
   value.erase(std::remove(value.begin(), value.end(), '\r'), value.end());
@@ -52,14 +87,13 @@ bool WriteBytes(HANDLE file, const char* data, size_t size,
                 DWORD* native_error) {
   size_t offset = 0;
   while (offset < size) {
-    const DWORD chunk = static_cast<DWORD>(
-        std::min<size_t>(size - offset, MAXDWORD));
+    const DWORD chunk =
+        static_cast<DWORD>(std::min<size_t>(size - offset, MAXDWORD));
     DWORD written = 0;
     const BOOL write_succeeded =
         WriteFile(file, data + offset, chunk, &written, nullptr);
     if (!write_succeeded || written == 0) {
-      *native_error =
-          write_succeeded ? ERROR_WRITE_FAULT : GetLastError();
+      *native_error = write_succeeded ? ERROR_WRITE_FAULT : GetLastError();
       return false;
     }
     offset += written;
@@ -77,11 +111,10 @@ std::string Base64Line(const uint8_t* data, size_t size) {
   std::string encoded;
   encoded.reserve(((size + 2) / 3) * 4 + 2);
   for (size_t offset = 0; offset < size; offset += 3) {
-    const uint32_t block = static_cast<uint32_t>(data[offset]) << 16 |
-                           (offset + 1 < size
-                                ? static_cast<uint32_t>(data[offset + 1]) << 8
-                                : 0) |
-                           (offset + 2 < size ? data[offset + 2] : 0);
+    const uint32_t block =
+        static_cast<uint32_t>(data[offset]) << 16 |
+        (offset + 1 < size ? static_cast<uint32_t>(data[offset + 1]) << 8 : 0) |
+        (offset + 2 < size ? data[offset + 2] : 0);
     encoded.push_back(alphabet[(block >> 18) & 0x3f]);
     encoded.push_back(alphabet[(block >> 12) & 0x3f]);
     encoded.push_back(offset + 1 < size ? alphabet[(block >> 6) & 0x3f] : '=');
@@ -104,10 +137,10 @@ bool WriteBase64(HANDLE output, const uint8_t* data, size_t size,
 
 bool WriteBase64File(HANDLE output, const std::wstring& path,
                      DWORD* native_error, bool* attachment_error) {
-  HANDLE input = CreateFileW(
-      path.c_str(), GENERIC_READ,
-      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
-      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  HANDLE input =
+      CreateFileW(path.c_str(), GENERIC_READ,
+                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                  nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (input == INVALID_HANDLE_VALUE) {
     *native_error = GetLastError();
     *attachment_error = true;
@@ -126,8 +159,7 @@ bool WriteBase64File(HANDLE output, const std::wstring& path,
       break;
     }
     if (read == 0) {
-      if (!had_data)
-        succeeded = WriteString(output, "\r\n", native_error);
+      if (!had_data) succeeded = WriteString(output, "\r\n", native_error);
       break;
     }
     had_data = true;
@@ -142,8 +174,8 @@ bool WriteBase64File(HANDLE output, const std::wstring& path,
 
 std::string EncodeWordChunk(const std::string& value, size_t offset,
                             size_t size) {
-  std::string encoded = Base64Line(
-      reinterpret_cast<const uint8_t*>(value.data() + offset), size);
+  std::string encoded =
+      Base64Line(reinterpret_cast<const uint8_t*>(value.data() + offset), size);
   encoded.resize(encoded.size() - 2);
   return "=?UTF-8?B?" + encoded + "?=";
 }
@@ -200,12 +232,24 @@ std::string AsciiFilenameFallback(const std::string& value) {
   return fallback.empty() ? "attachment" : fallback;
 }
 
+std::string MimeTypeForFilename(const std::wstring& filename) {
+  const auto dot = filename.find_last_of(L'.');
+  if (dot != std::wstring::npos) {
+    std::wstring extension = filename.substr(dot);
+    std::transform(extension.begin(), extension.end(), extension.begin(),
+                   [](wchar_t character) { return std::towlower(character); });
+    if (extension == L".pdf") return "application/pdf";
+  }
+  return "application/octet-stream";
+}
+
 }  // namespace
 
 EmlBuildResult WriteEmlDraft(const EmailMessage& email,
                              const std::wstring& path) {
-  HANDLE output = CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr,
-                              TRUNCATE_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  HANDLE output =
+      CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr, TRUNCATE_EXISTING,
+                  FILE_ATTRIBUTE_NORMAL, nullptr);
   if (output == INVALID_HANDLE_VALUE) {
     const DWORD native_error = GetLastError();
     DeleteFileW(path.c_str());
@@ -213,10 +257,20 @@ EmlBuildResult WriteEmlDraft(const EmailMessage& email,
             static_cast<int>(native_error)};
   }
 
-  const std::string boundary =
-      "----flutter-email-sender-" + std::to_string(GetTickCount64());
+  const std::string message_guid = CreateGuidText();
+  if (message_guid.empty()) {
+    CloseHandle(output);
+    DeleteFileW(path.c_str());
+    return {"Could not create a unique email draft identifier.",
+            static_cast<int>(ERROR_GEN_FAILURE)};
+  }
+  const std::string boundary = "----flutter-email-sender-" + message_guid;
   std::ostringstream headers;
-  headers << "X-Unsent: 1\r\nMIME-Version: 1.0\r\n";
+  headers << "X-Unsent: 1\r\n"
+          << "Date: " << Rfc5322Date() << "\r\n"
+          << "Message-ID: <" << message_guid
+          << "@flutter-email-sender.invalid>\r\n"
+          << "MIME-Version: 1.0\r\n";
   WriteAddressHeader(&headers, "To", email.recipients);
   if (!email.cc.empty()) WriteAddressHeader(&headers, "Cc", email.cc);
   if (!email.bcc.empty()) WriteAddressHeader(&headers, "Bcc", email.bcc);
@@ -230,10 +284,10 @@ EmlBuildResult WriteEmlDraft(const EmailMessage& email,
 
   DWORD native_error = ERROR_SUCCESS;
   bool attachment_error = false;
-  bool succeeded = WriteString(output, headers.str(), &native_error) &&
-                   WriteBase64(output,
-                               reinterpret_cast<const uint8_t*>(email.body.data()),
-                               email.body.size(), &native_error);
+  bool succeeded =
+      WriteString(output, headers.str(), &native_error) &&
+      WriteBase64(output, reinterpret_cast<const uint8_t*>(email.body.data()),
+                  email.body.size(), &native_error);
   std::string error;
   for (const auto& attachment : email.attachment_paths) {
     if (!succeeded) break;
@@ -246,15 +300,15 @@ EmlBuildResult WriteEmlDraft(const EmailMessage& email,
     const std::string encoded_name = PercentEncodeParameter(utf8_name);
     std::ostringstream attachment_headers;
     attachment_headers << "--" << boundary << "\r\n";
-    attachment_headers << "Content-Type: application/octet-stream;\r\n"
+    attachment_headers << "Content-Type: " << MimeTypeForFilename(wide_name)
+                       << ";\r\n"
                        << " name=\"" << fallback_name << "\";\r\n"
                        << " name*=UTF-8''" << encoded_name << "\r\n";
     attachment_headers << "Content-Disposition: attachment;\r\n"
                        << " filename=\"" << fallback_name << "\";\r\n"
                        << " filename*=UTF-8''" << encoded_name << "\r\n";
     attachment_headers << "Content-Transfer-Encoding: base64\r\n\r\n";
-    succeeded =
-        WriteString(output, attachment_headers.str(), &native_error);
+    succeeded = WriteString(output, attachment_headers.str(), &native_error);
     if (succeeded && !WriteBase64File(output, attachment, &native_error,
                                       &attachment_error)) {
       succeeded = false;
@@ -263,8 +317,7 @@ EmlBuildResult WriteEmlDraft(const EmailMessage& email,
     }
   }
   if (succeeded)
-    succeeded = WriteString(output, "--" + boundary + "--\r\n",
-                            &native_error);
+    succeeded = WriteString(output, "--" + boundary + "--\r\n", &native_error);
   CloseHandle(output);
 
   if (!succeeded) {
